@@ -23,9 +23,36 @@ contract WanderTest is Test {
 
     }
 
-    function testCreatePromotion() public {
+    function testCreatePromotionOneTier() public {
         vm.prank(alice);
-        wander.createPromotion();
+        string[] memory hashes = new string[](1);
+        hashes[0] = "ipfsipfsipfsipfsipfsipfsipfs";
+        uint256[] memory tierAmounts = new uint256[](1);
+        tierAmounts[0] = uint256(1 ether);
+        wander.createPromotion(hashes, tierAmounts, 1);
+    }
+
+    function testCreatePromotionThreeTier() public {
+        vm.prank(alice);
+        string[] memory hashes = new string[](3);
+        hashes[0] = "ipfsipfsipfsipfsipfsipfsipfs";
+        hashes[1] = "ipfsipfsipfsipfsipfsipfsipfs";
+        hashes[2] = "ipfsipfsipfsipfsipfsipfsipfs";
+        uint256[] memory tierAmounts = new uint256[](3);
+        tierAmounts[0] = uint256(1 ether);
+        tierAmounts[1] = uint256(2 ether);
+        tierAmounts[2] = uint256(10 ether);
+        wander.createPromotion(hashes, tierAmounts, 1);
+    }
+    function testOneTierSpend() public {
+        vm.prank(alice);
+        string[] memory hashes = new string[](1);
+        hashes[0] = "ipfsipfsipfsipfsipfsipfsipfs";
+        uint256[] memory tierAmounts = new uint256[](1);
+        tierAmounts[0] = uint256(1 ether);
+        wander.createPromotion(hashes, tierAmounts, 1);
+        vm.prank(bob);
+        wander.sendEther(alice);
     }
 
 }

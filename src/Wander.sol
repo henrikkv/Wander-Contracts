@@ -1,11 +1,13 @@
 //SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.8.13;
 
 // Useful for debugging. Remove when deploying to a live network.
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+
+import "forge-std/console2.sol";
 
 // Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
 // import "@openzeppelin/contracts/access/Ownable.sol";
@@ -50,15 +52,16 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256 newItemId = _tokenIds.current();
         Promotion storage promotion = vendorToPromotion[vendorAddress];
         if (promotion.customerTotalSpent[buyer] == 0) _mint(buyer, newItemId);
+        console2.log("after mint");
         promotion.customerTotalSpent[buyer] += amt;
-        //Not equal 0 check to make sure does not go into infinite loop since later values that are not set I think default to 0 which would be less than
-        while (
-            promotion.customerCurrTier[buyer] + 1 <
-            promotion.customerTotalSpent[buyer] &&
-            promotion.customerCurrTier[buyer] + 1 != 0
-        ) {
-            promotion.customerCurrTier[buyer]++;
+
+        while (promotion.customerCurrTier[buyer] < promotion.tiers.length -1) {
+            if (promotion.customerTotalSpent[buyer] > promotion.tierAmountsNeccessary[promotion.customerCurrTier[buyer]+1]) {
+                promotion.customerCurrTier[buyer]++;
+            }
+            else {break;}
         }
+
         _setTokenURI(
             newItemId,
             promotion.tiers[promotion.customerCurrTier[buyer]]
@@ -83,8 +86,6 @@ contract Wander is ERC721URIStorage, Ownable {
 
         promotion.endTimestamp = block.timestamp + duration * 1 days;
         promotion.tiers = tiers;
-        console.log(promotion.tiers[0]);
-        // mapping(address => uint256) customerCurrTier;
         promotion.tierAmountsNeccessary = tierAmountsNecessary;
         promotion.initialized = 1;
     }
