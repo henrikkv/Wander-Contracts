@@ -6,7 +6,6 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 // Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
 // import "@openzeppelin/contracts/access/Ownable.sol";
@@ -47,7 +46,8 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256 amt = msg.value;
 		payable(vendorAddress).transfer(msg.value);
         uint256 newItemId = _tokenIds.current();
-        _mint(buyer, newItemId);
+		if(!(balanceOf(buyer)>0))
+        	_mint(buyer, newItemId);
         Promotion storage promotion = vendorToPromotion[vendorAddress];
         promotion.customerTotalSpent[buyer]+=amt;
         //Not equal 0 check to make sure does not go into infinite loop since later values that are not set I think default to 0 which would be less than
