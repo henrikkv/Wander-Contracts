@@ -24,8 +24,10 @@ contract Wander is ERC721URIStorage, Ownable {
         string[] tiers;
         mapping(address => uint256) customerCurrTier;
         mapping(address => uint256) customerTotalSpent;
-        uint256[] tierAmountsNeccessary;
+        uint256[] tierAmountsNeccessary; // Just FYI, 'necessary' is misspelled (should have only one c).
         uint256 initialized;
+        address donationAddress;
+        uint256 donationAmount; // amount to be donated as a decimal (i.e., 0.5% donated would be '0.0005').
     }
     mapping(address => Promotion) public vendorToPromotion;
 
@@ -39,14 +41,38 @@ contract Wander is ERC721URIStorage, Ownable {
         return "ipfs://";
     }
 
+    function setDonationAddress public (address _charityAddress) {
+        require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
+        // fromZach: for now, this function allows any merchant who is part of a promotion to call this function.
+        // I think that's fine... assuming that merchants who are already cooperating are collegial is not airtight, but it's not critically breaking.
+        vendorToPromotion[msg.sender].donationAddress = _charityAddress;
+    }
+
+    function setDonationAmount public (uint256 _amount) {
+        require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
+        // This line checks that the donation amount isn't super high.
+        // Intention is to avoid user error where donation eclipses merchant savings from taking crypto.
+        require(_amount <= 0.03, "You're attempting to set a very high donation amount. Please input the donation amount as a decimal. For example, if you want to donate 1% of the payment, set the value to 0.01. If you are sure you're inputting correctly, use setDonationAmountBig().");
+        vendorToPromotion[msg.sender].donationAmount = _amount;
+    }
+
+    function setDonationAmountBig public (uint256 _amount) {
+        // This does the same thing as setDonationAmount but doesn't include a check for a reasonable donation amount.
+        require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
+        vendorToPromotion[msg.sender].donationAmount = _amount;
+    }
+
     function sendEther(address vendorAddress) public payable {
         require(
             vendorToPromotion[vendorAddress].initialized == 1,
             "VENDOR NOT PART OF ANY PROMOTION"
         );
         address buyer = msg.sender;
-        uint256 amt = msg.value;
-        payable(vendorAddress).transfer(msg.value);
+        // These lines split the ETH received into two streams: one to the merchant and one to the charity.
+        uint256 merchantAmt = msg.value * (1-vendorToPromotion[vendorAddress].donationAmount);
+        uint256 charityAmt = msg.value * vendorToPromotion[vendorAddress].donationAmount;
+        payable(vendorAddress).transfer(merchantAmt);
+        payable(vendorToPromotion[vendorAddress].donationAddress).transfer(charityAmt);
         uint256 newItemId = _tokenIds.current();
         Promotion storage promotion = vendorToPromotion[vendorAddress];
         if (promotion.customerTotalSpent[buyer] == 0) _mint(buyer, newItemId);
