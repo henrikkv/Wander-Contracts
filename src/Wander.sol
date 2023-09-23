@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-solidity/contracts/math/Math.sol";
 
 // Use openzeppelin to inherit battle-tested implementations (ERC20, ERC721, etc)
 // import "@openzeppelin/contracts/access/Ownable.sol";
@@ -23,8 +24,8 @@ contract Wander is ERC721URIStorage, Ownable {
         uint endTimestamp;
         string[] tiers;
         mapping(address => uint256) customerCurrTier;
-        mapping(address => uint256) customerTotalSpent;
-        uint256[] tierAmountsNeccessary; // Just FYI, 'necessary' is misspelled (should have only one c).
+        mapping(address => uint256) customerScore;
+        uint256[] tierAmountsNecessary; //corrected everything to 'necessary' (got rid of any 'neccessary's)
         uint256 initialized;
         address donationAddress;
         uint256 donationAmount; // amount to be donated as a decimal (i.e., 0.5% donated would be '0.0005').
@@ -75,12 +76,12 @@ contract Wander is ERC721URIStorage, Ownable {
         payable(vendorToPromotion[vendorAddress].donationAddress).transfer(charityAmt);
         uint256 newItemId = _tokenIds.current();
         Promotion storage promotion = vendorToPromotion[vendorAddress];
-        if (promotion.customerTotalSpent[buyer] == 0) _mint(buyer, newItemId);
-        promotion.customerTotalSpent[buyer] += amt;
+        if (promotion.customerScore[buyer] == 0) _mint(buyer, newItemId);
+        promotion.customerScore[buyer] += Math.log10(msg.value / 1e18) + 1; // the customerScore is equal to log(x)+y where x is money spent and y is number of payments. This formula changes the score from being entirely based on how much money someone has to a composite of money spent and visits. The most gas efficient way to do this is to directly increase it in this way every payment.
         //Not equal 0 check to make sure does not go into infinite loop since later values that are not set I think default to 0 which would be less than
         while (
             promotion.customerCurrTier[buyer] + 1 <
-            promotion.customerTotalSpent[buyer] &&
+            promotion.customerScore[buyer] &&
             promotion.customerCurrTier[buyer] + 1 != 0
         ) {
             promotion.customerCurrTier[buyer]++;
@@ -115,7 +116,7 @@ contract Wander is ERC721URIStorage, Ownable {
         promotion.donationAddress = _donationAddress;
         promotion.donationAmount = _donationAmount;
         // mapping(address => uint256) customerCurrTier;
-        promotion.tierAmountsNeccessary = tierAmountsNecessary;
+        promotion.tierAmountsNecessary = tierAmountsNecessary;
         promotion.initialized = 1;
     }
 }
