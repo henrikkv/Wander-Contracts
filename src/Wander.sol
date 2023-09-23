@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract Wander is ERC1155, Ownable {
-    constructor() ERC1155("") {}
+contract Wander is ERC721 {
+    constructor() ERC721("Wander", "WOW") {}
 
-    function setURI(string memory newuri) public onlyOwner {
-        _setURI(newuri);
+    function _baseURI() internal pure override returns (string memory) {
+        return "https://";
     }
 }
 
