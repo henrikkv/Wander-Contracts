@@ -19,7 +19,7 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256 initialized;
 //        address[] admins;
     }
-    Promotion[] public promotions;
+//    Promotion[] public promotions;
     mapping(address => Promotion) public vendorToPromotion;
 
     constructor() ERC721("Wander", "WOW") {}
