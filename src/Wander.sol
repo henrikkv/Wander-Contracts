@@ -46,9 +46,9 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256 amt = msg.value;
 		payable(vendorAddress).transfer(msg.value);
         uint256 newItemId = _tokenIds.current();
-		if(!(balanceOf(buyer)>0))
+		Promotion storage promotion = vendorToPromotion[vendorAddress];
+		if(promotion.customerTotalSpent[buyer]==0)
         	_mint(buyer, newItemId);
-        Promotion storage promotion = vendorToPromotion[vendorAddress];
         promotion.customerTotalSpent[buyer]+=amt;
         //Not equal 0 check to make sure does not go into infinite loop since later values that are not set I think default to 0 which would be less than
         while(promotion.customerCurrTier[buyer]+1<promotion.customerTotalSpent[buyer] && promotion.customerCurrTier[buyer]+1 != 0) {
