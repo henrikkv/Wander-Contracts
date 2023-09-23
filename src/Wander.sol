@@ -30,7 +30,7 @@ contract Wander is ERC721URIStorage, Ownable {
 
     function sendEther(address vendorAddress) public payable {
         uint256 amtSent = msg.value;
-
+	require(vendorToPromotion[vendorAddress].initialized == 1, "VENDOR NOT PART OF ANY PROMOTION");
         sendToVendor(vendorAddress, msg.sender, amtSent);
     } 
 
