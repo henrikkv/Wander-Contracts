@@ -14,6 +14,7 @@ contract Wander is ERC721URIStorage, Ownable {
         uint endTimestamp;
         string[] tiers;
         mapping(address => uint256) customerCurrTier;
+        mapping(address => uint256) customerTotalSpent;
         uint256[] tierAmountsNeccessary;
         uint256 initialized;
 //        address[] admins;
@@ -39,6 +40,11 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256 newItemId = _tokenIds.current();
         _mint(buyer, newItemId);
         Promotion storage promotion = vendorToPromotion[to];
+        promotion.customerTotalSpent[buyer]+=amt;
+        //Not equal 0 check to make sure does not go into infinite loop since later values that are not set I think default to 0 which would be less than
+        while(promotion.customerCurrTier[buyer]+1<promotion.customerTotalSpent[buyer] && promotion.customerCurrTier[buyer]+1 != 0) {
+            promotion.customerCurrTier[buyer]++;
+        }
         _setTokenURI(newItemId, promotion.tiers[promotion.customerCurrTier[buyer]]); //setting tokenURI to corresponding tier URI
         promotion.customerCurrTier[buyer]++;
         _tokenIds.increment();
