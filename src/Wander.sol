@@ -8,7 +8,6 @@ contract Wander is ERC721 {
         uint endTimestamp;
         string[] tiers;
         uint256[] tierAmountsNeccessary;
-//        address[] admins;
     }
     Promotion[] public promotions;
     mapping(address => uint256) public vendorToPromotion;
@@ -20,12 +19,10 @@ contract Wander is ERC721 {
     }
 
     function createPromotion(string[] memory tiers, uint duration) external {
-        if (vendorToPromotion[msg.sender]) {
-            require(vendorToPromotion[msg.sender].endTimestamp < block.timestamp);
-        }
+        require(vendorToPromotion[msg.sender].endTimestamp < block.timestamp);
         Promotion memory promotion = new Promotion();
         promotion.endTimestamp = block.timestamp + duration * 1 days; 
-//        promotions[]
+        promotions[promotions.length] = promotion;
 
     }
 }
