@@ -41,14 +41,14 @@ contract Wander is ERC721URIStorage, Ownable {
         return "ipfs://";
     }
 
-    function setDonationAddress public (address _charityAddress) {
+    function setDonationAddress(address _charityAddress) public {
         require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
         // fromZach: for now, this function allows any merchant who is part of a promotion to call this function.
         // I think that's fine... assuming that merchants who are already cooperating are collegial is not airtight, but it's not critically breaking.
         vendorToPromotion[msg.sender].donationAddress = _charityAddress;
     }
 
-    function setDonationAmount public (uint256 _amount) {
+    function setDonationAmount(uint256 _amount) public {
         require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
         // This line checks that the donation amount isn't super high.
         // Intention is to avoid user error where donation eclipses merchant savings from taking crypto.
@@ -56,7 +56,7 @@ contract Wander is ERC721URIStorage, Ownable {
         vendorToPromotion[msg.sender].donationAmount = _amount;
     }
 
-    function setDonationAmountBig public (uint256 _amount) {
+    function setDonationAmountBig(uint256 _amount) public {
         // This does the same thing as setDonationAmount but doesn't include a check for a reasonable donation amount.
         require(vendorToPromotion[msg.sender].exists, "The sender has no promotion");
         vendorToPromotion[msg.sender].donationAmount = _amount;
@@ -94,22 +94,26 @@ contract Wander is ERC721URIStorage, Ownable {
     }
 
     function createPromotion(
-        string[] memory tiers,
-        uint256[] memory tierAmountsNecessary,
-        uint duration
+        string[] memory tiers, // array of IPFS hashes representing the token metadata
+        uint256[] memory tierAmountsNecessary, // array of $ values needed to be spent to get to the corresponding NFT
+        uint duration, // duration in days
+        address _donationAddress,
+        uint256 _donationAmount // amount to be donated as a decimal (i.e., 0.5% to be donated would be '0.0005').
     ) external {
         Promotion storage promotion = vendorToPromotion[msg.sender];
 
         if (promotion.initialized == 1) {
             require(
                 promotion.endTimestamp < block.timestamp,
-                "ERROR - Promotion has not expired yet!"
+                "ERROR - Previous promotion has not expired yet!"
             );
         }
 
         promotion.endTimestamp = block.timestamp + duration * 1 days;
         promotion.tiers = tiers;
         console.log(promotion.tiers[0]);
+        promotion.donationAddress = _donationAddress;
+        promotion.donationAmount = _donationAmount;
         // mapping(address => uint256) customerCurrTier;
         promotion.tierAmountsNeccessary = tierAmountsNecessary;
         promotion.initialized = 1;
