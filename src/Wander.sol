@@ -4,6 +4,7 @@ pragma solidity 0.8.13;
 // Useful for debugging. Remove when deploying to a live network.
 //import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -17,9 +18,10 @@ import "forge-std/console2.sol";
  * It also allows the owner to withdraw the Ether in the contract
  * @author BuidlGuidl
  */
-contract Wander is ERC721URIStorage, Ownable {
+contract Wander is ERC721Enumerable, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
+    Counters.Counter private _promotionIds;
 
     struct Promotion {
         uint endTimestamp;
@@ -29,12 +31,14 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256[] tierAmountsNeccessary;
         uint256 initialized;
     }
-    mapping(address => Promotion) public vendorToPromotion;
+    mapping(uint256 => Promotion)public promotions;
+    mapping(address => uint256) public vendorToPromotionId;
+    mapping(uint256 => uint256) public tokenIdToPromotionId;
 
     constructor() ERC721("Wander", "WOW") {}
 
-    function getTiers() public view onlyOwner returns (string[] memory) {
-        return vendorToPromotion[msg.sender].tiers;
+    function getTiers(uint256 promotionId) public view onlyOwner returns (string[] memory) {
+        return promotions[promotionId].tiers;
     }
 
     function _baseURI() internal pure override returns (string memory) {
@@ -42,17 +46,19 @@ contract Wander is ERC721URIStorage, Ownable {
     }
 
     function sendEther(address vendorAddress) public payable {
+        uint256 promotionId = vendorToPromotionId[vendorAddress];
+        Promotion storage promotion = promotions[promotionId];
         require(
-            vendorToPromotion[vendorAddress].initialized == 1,
+            promotion.initialized == 1,
             "VENDOR NOT PART OF ANY PROMOTION"
         );
         address buyer = msg.sender;
         uint256 amt = msg.value;
-        payable(vendorAddress).transfer(msg.value);
         uint256 newItemId = _tokenIds.current();
-        Promotion storage promotion = vendorToPromotion[vendorAddress];
-        if (promotion.customerTotalSpent[buyer] == 0) _mint(buyer, newItemId);
-        console2.log("after mint");
+        if (promotion.customerTotalSpent[buyer] == 0) {
+            _mint(buyer, newItemId);
+            tokenIdToPromotionId[newItemId] = promotionId;
+        }
         promotion.customerTotalSpent[buyer] += amt;
 
         while (promotion.customerCurrTier[buyer] < promotion.tiers.length -1) {
@@ -61,13 +67,11 @@ contract Wander is ERC721URIStorage, Ownable {
             }
             else {break;}
         }
-
-        _setTokenURI(
-            newItemId,
-            promotion.tiers[promotion.customerCurrTier[buyer]]
-        ); //setting tokenURI to corresponding tier URI
+        
         promotion.customerCurrTier[buyer]++;
         _tokenIds.increment();
+
+        payable(vendorAddress).transfer(msg.value);
     }
 
     function createPromotion(
@@ -75,18 +79,14 @@ contract Wander is ERC721URIStorage, Ownable {
         uint256[] memory tierAmountsNecessary,
         uint duration
     ) external {
-        Promotion storage promotion = vendorToPromotion[msg.sender];
+        require(block.timestamp > promotions[vendorToPromotionId[msg.sender]].endTimestamp, "ERROR - Promotion is still active!");
 
-        if (promotion.initialized == 1) {
-            require(
-                promotion.endTimestamp < block.timestamp,
-                "ERROR - Promotion has not expired yet!"
-            );
-        }
+        
 
-        promotion.endTimestamp = block.timestamp + duration * 1 days;
-        promotion.tiers = tiers;
-        promotion.tierAmountsNeccessary = tierAmountsNecessary;
-        promotion.initialized = 1;
+        promotions[_promotionIds.current()].endTimestamp = block.timestamp + duration * 1 days;
+        promotions[_promotionIds.current()].tiers = tiers;
+        promotions[_promotionIds.current()].tierAmountsNeccessary = tierAmountsNecessary;
+        promotions[_promotionIds.current()].initialized = 1;
+        _promotionIds.increment();
     }
 }
