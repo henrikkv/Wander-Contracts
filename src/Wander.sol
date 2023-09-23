@@ -15,7 +15,7 @@ contract Wander is ERC721URIStorage, Ownable {
         string[] tiers;
         mapping(address => uint256) customerCurrTier;
         uint256[] tierAmountsNeccessary;
-        int256 initialized;
+        uint256 initialized;
 //        address[] admins;
     }
     Promotion[] public promotions;
@@ -40,6 +40,7 @@ contract Wander is ERC721URIStorage, Ownable {
         _mint(buyer, newItemId);
         Promotion storage promotion = vendorToPromotion[to];
         _setTokenURI(newItemId, promotion.tiers[promotion.customerCurrTier[buyer]]); //setting tokenURI to corresponding tier URI
+        promotion.customerCurrTier[buyer]++;
         _tokenIds.increment();
     }
 
