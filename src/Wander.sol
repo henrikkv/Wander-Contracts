@@ -57,7 +57,7 @@ contract Wander is ERC721Enumerable, Ownable {
         address owner = ownerOf(tokenId);
 
 
-        require(promotion.customerCurrTier[owner] != 0,  "Owner does not have a valid tier");
+        //require(promotion.customerCurrTier[owner] != 0,  "Owner does not have a valid tier");
 
         string memory baseURI = _baseURI();
         string memory tierURI = promotion.tiers[promotion.customerCurrTier[owner]];
