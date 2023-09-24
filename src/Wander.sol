@@ -32,7 +32,7 @@ contract Wander is ERC721Enumerable, Ownable {
         uint256[] tierAmountsNecessary; //corrected everything to 'necessary' (got rid of any 'neccessary's)
         uint256 initialized;
         address donationAddress;
-        uint256 donationAmount; // amount to be donated as a decimal (i.e., 0.5% donated would be '0.0005').
+        uint256 donationAmount;
     }
     mapping(uint256 => Promotion)public promotions;
     mapping(address => uint256) public vendorToPromotionId;
@@ -59,7 +59,7 @@ contract Wander is ERC721Enumerable, Ownable {
         //require(promotions[vendorToPromotionId[msg.sender]].exists, "The sender has no promotion");
         // This line checks that the donation amount isn't super high.
         // Intention is to avoid user error where donation eclipses merchant savings from taking crypto.
-        //require(_amount <= 0.03, "You're attempting to set a very high donation amount. Please input the donation amount as a decimal. For example, if you want to donate 1% of the payment, set the value to 0.01. If you are sure you're inputting correctly, use setDonationAmountBig().");
+        require(_amount <= 0.03 ether, "You're attempting to set a very high donation amount. Please input the donation amount as a decimal. For example, if you want to donate 1% of the payment, set the value to 0.01. If you are sure you're inputting correctly, use setDonationAmountBig().");
         promotions[vendorToPromotionId[msg.sender]].donationAmount = _amount;
     }
 
@@ -78,8 +78,8 @@ contract Wander is ERC721Enumerable, Ownable {
         );
         address buyer = msg.sender;
         // These lines split the ETH received into two streams: one to the merchant and one to the charity.
-        uint256 merchantAmt = msg.value * (1-promotion.donationAmount);
-        uint256 charityAmt = msg.value * promotion.donationAmount;
+        uint256 merchantAmt = msg.value -promotion.donationAmount*msg.value;
+        uint256 charityAmt =             promotion.donationAmount*msg.value;
         payable(vendorAddress).transfer(merchantAmt);
         payable(promotion.donationAddress).transfer(charityAmt);
         uint256 newItemId = _tokenIds.current();
@@ -106,7 +106,7 @@ contract Wander is ERC721Enumerable, Ownable {
         uint256[] memory tierAmountsNecessary, // array of $ values needed to be spent to get to the corresponding NFT
         uint duration, // duration in days
         address _donationAddress,
-        uint256 _donationAmount // amount to be donated as a decimal (i.e., 0.5% to be donated would be '0.0005').
+        uint256 _donationAmount // amount to be donated as a fraction of one eth (i.e., 0.5% to be donated would be '0.0005 ether').
     ) external {
         require(block.timestamp > promotions[vendorToPromotionId[msg.sender]].endTimestamp, "ERROR - Promotion is still active!");
 

@@ -29,7 +29,7 @@ contract WanderTest is Test {
         uint256[] memory tierAmounts = new uint256[](1);
         tierAmounts[0] = uint256(1 ether);
         vm.prank(alice);
-        wander.createPromotion(hashes, tierAmounts, 1, alice, 10);
+        wander.createPromotion(hashes, tierAmounts, 1, alice, 0.01 ether);
     }
 
     function testCreatePromotionThreeTier() public {
@@ -42,7 +42,7 @@ contract WanderTest is Test {
         tierAmounts[1] = uint256(2 ether);
         tierAmounts[2] = uint256(10 ether);
         vm.prank(alice);
-        wander.createPromotion(hashes, tierAmounts, 1);
+        wander.createPromotion(hashes, tierAmounts, 3, alice, 0.01 ether);
     }
     function testOneTierSpend() public {
         string[] memory hashes = new string[](1);
@@ -50,7 +50,7 @@ contract WanderTest is Test {
         uint256[] memory tierAmounts = new uint256[](1);
         tierAmounts[0] = uint256(1 ether);
         vm.prank(alice);
-        wander.createPromotion(hashes, tierAmounts, 1);
+        wander.createPromotion(hashes, tierAmounts, 1, alice, 0.03 ether);
         vm.prank(bob);
         wander.sendEther(alice);
     }
