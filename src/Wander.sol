@@ -62,7 +62,7 @@ contract Wander is ERC721Enumerable, Ownable {
         string memory baseURI = _baseURI();
         string memory tierURI = promotion.tiers[promotion.customerCurrTier[owner]];
 
-        return string(abi.encodePacked(baseURI, "/", tierURI));
+        return string(abi.encodePacked(baseURI, tierURI));
     }
 
     function setDonationAddress(address _charityAddress) public {
