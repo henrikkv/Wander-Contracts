@@ -26,6 +26,8 @@ contract Wander is ERC721Enumerable, Ownable {
 
     struct Promotion {
         uint endTimestamp;
+        address owner;
+        address[] vendors;
         string[] tiers;
         mapping(address => uint256) customerCurrTier;
         mapping(address => uint256) customerScore;
@@ -59,7 +61,7 @@ contract Wander is ERC721Enumerable, Ownable {
         //require(promotions[vendorToPromotionId[msg.sender]].exists, "The sender has no promotion");
         // This line checks that the donation amount isn't super high.
         // Intention is to avoid user error where donation eclipses merchant savings from taking crypto.
-        require(_amount <= 0.03 ether, "You're attempting to set a very high donation amount. Please input the donation amount as a decimal. For example, if you want to donate 1% of the payment, set the value to 0.01. If you are sure you're inputting correctly, use setDonationAmountBig().");
+        require(_amount <= 30, "You're attempting to set a very high donation amount. Please input the donation amount as a decimal. For example, if you want to donate 1% of the payment, set the value to 0.01. If you are sure you're inputting correctly, use setDonationAmountBig().");
         promotions[vendorToPromotionId[msg.sender]].donationAmount = _amount;
     }
 
@@ -78,8 +80,9 @@ contract Wander is ERC721Enumerable, Ownable {
         );
         address buyer = msg.sender;
         // These lines split the ETH received into two streams: one to the merchant and one to the charity.
-        uint256 merchantAmt = msg.value -promotion.donationAmount*msg.value;
-        uint256 charityAmt =             promotion.donationAmount*msg.value;
+//        uint256 merchantAmt = msg.value - promotion.donationAmount*msg.value;
+        uint256 charityAmt = promotion.donationAmount*msg.value/1000;
+        uint256 merchantAmt = msg.value - charityAmt;
         payable(vendorAddress).transfer(merchantAmt);
         payable(promotion.donationAddress).transfer(charityAmt);
         uint256 newItemId = _tokenIds.current();
@@ -98,7 +101,6 @@ contract Wander is ERC721Enumerable, Ownable {
         }
         
 
-        payable(vendorAddress).transfer(msg.value);
     }
 
     function createPromotion(
@@ -119,6 +121,7 @@ contract Wander is ERC721Enumerable, Ownable {
             );
         }
         promotion.endTimestamp = block.timestamp + duration * 1 days;
+        promotion.owner = msg.sender;
         promotion.tiers = tiers;
         promotion.tierAmountsNecessary = tierAmountsNecessary;
         _promotionIds.increment();
@@ -129,5 +132,24 @@ contract Wander is ERC721Enumerable, Ownable {
         promotion.donationAmount = _donationAmount;
         promotion.tierAmountsNecessary = tierAmountsNecessary;
         promotion.initialized = 1;
+    }
+    function addVendor (address vendor) external {
+        uint256 promotionId = vendorToPromotionId[msg.sender];
+        Promotion storage promotion = promotions[promotionId];
+
+        require(msg.sender == promotion.owner, "Only the owner can add addresses to a promotion.");
+        promotion.vendors.push(vendor);
+    }
+    function removeVendor (address vendor) external {
+        uint256 promotionId = vendorToPromotionId[msg.sender];
+        Promotion storage promotion = promotions[promotionId];
+
+        require(msg.sender == promotion.owner, "Only the owner can remove addresses from a promotion.");
+        for (uint i = 0; i < promotion.vendors.length; i++) {
+            if (promotion.vendors[i] == vendor) {
+                promotion.vendors[i] = promotion.vendors[promotion.vendors.length-1];
+                promotion.vendors.pop();
+            }
+        }
     }
 }
