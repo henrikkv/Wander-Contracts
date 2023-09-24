@@ -45,6 +45,14 @@ contract Wander is ERC721Enumerable, Ownable {
         return "ipfs://";
     }
 
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        _requireMinted(tokenId);
+        uint256 promotionId = tokenIdToPromotionId[tokenId];
+        Promotion storage promotion = promotions[promotionId];
+
+        return promotion.tiers[promotion.customerCurrTier[_ownerOf(tokenId)]];
+    }
+
     function sendEther(address vendorAddress) public payable {
         uint256 promotionId = vendorToPromotionId[vendorAddress];
         Promotion storage promotion = promotions[promotionId];
@@ -80,8 +88,6 @@ contract Wander is ERC721Enumerable, Ownable {
         uint duration
     ) external {
         require(block.timestamp > promotions[vendorToPromotionId[msg.sender]].endTimestamp, "ERROR - Promotion is still active!");
-
-        
 
         promotions[_promotionIds.current()].endTimestamp = block.timestamp + duration * 1 days;
         promotions[_promotionIds.current()].tiers = tiers;

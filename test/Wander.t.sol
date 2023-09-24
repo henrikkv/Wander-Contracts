@@ -52,7 +52,13 @@ contract WanderTest is Test {
         tierAmounts[0] = uint256(1 ether);
         wander.createPromotion(hashes, tierAmounts, 1);
         vm.prank(bob);
-        wander.sendEther(alice);
+        wander.sendEther{value: 1 ether}(alice);
+        require(alice.balance == 11 ether, "Alice should get 1 eth.");
+        require(wander.balanceOf(bob) == 1, "Bob should get an nft.");
+        vm.prank(bob);
+        wander.sendEther{value: 1 ether}(alice);
+        require(wander.balanceOf(bob) == 1, "Bob should not get an nft.");
+        require(wander.promotions[0].customerTotalSpent[bob] == 2 ether, "Bob should have spent 2 ether");
     }
 
 }
