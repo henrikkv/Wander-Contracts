@@ -50,6 +50,21 @@ contract Wander is ERC721Enumerable, Ownable {
         return "ipfs://";
     }
 
+        // Override the tokenURI function to generate dynamic URIs based on tier
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        Promotion storage promotion = promotions[tokenIdToPromotionId[tokenId]];
+        address owner = ownerOf(tokenId);
+
+
+        require(promotion.customerCurrTier[owner] != 0,  "Owner does not have a valid tier");
+
+        string memory baseURI = _baseURI();
+        string memory tierURI = promotion.tiers[promotion.customerCurrTier[owner]];
+
+        return string(abi.encodePacked(baseURI, "/", tierURI));
+    }
+
     function setDonationAddress(address _charityAddress) public {
         //require(promotions[vendorToPromotionId[msg.sender]], "The sender has no promotion");
         // fromZach: for now, this function allows any merchant who is part of a promotion to call this function.
